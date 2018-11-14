@@ -50,7 +50,7 @@ func run() error {
 	}
 
 	mac := out[0].Hardware.Net.Mac
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(make([]byte, 0, len(mac) + 5))
 
 	for i, c := range mac {
 		if i % 2 == 0 && i != 0 {
@@ -65,11 +65,17 @@ func run() error {
 	}
 	command := strings.ToLower(fmt.Sprintf("arp -an | grep \"%s\" | awk '{ print $2 }'", mac))
 	cmd = exec.Command("bash",  "-c", command)
-	output, err = cmd.CombinedOutput()
+	output, err = cmd.Output()
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(string(output[1:len(output) - 2]))
+	if len(output) == 0 {
+		fmt.Println("No address found. Is the VM running?")
+		return nil
+	}
+	
+	result := string(output[1:len(output) - 2])
+	fmt.Print(result)
 	return nil
 }
